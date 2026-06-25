@@ -1,15 +1,38 @@
-// Dashboard.jsx
+// Dashboard.jsx — updated with 6 new feature tabs
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import DashboardOverview from "./DashboardOverview";
-import HospitalNetwork from "./HospitalNetwork";
+import HospitalNetworkWithDistance from "./HospitalNetworkWithDistance";   // Feature 04 (replaces HospitalNetwork)
 import HelpSupport from "./HelpSupport1";
 import ResourceManagement from "./ResourceManagement";
 import ReferralNotifications from "./ReferralNotifications";
 
+// ── 6 New Features ────────────────────────────────────────────────────────────
+import SmartAlertSystem from "./SmartAlertSystem";           // Feature 01
+import AnalyticsDashboard from "./AnalyticsDashboard";       // Feature 02
+import PartialResourceLocking from "./PartialResourceLocking"; // Feature 03
+import BloodExpiryTracking from "./BloodExpiryTracking";     // Feature 05
+import InspectionTracking from "./InspectionTracking";       // Feature 06
+
 import { Button } from "../components/ui/button";
 import { auth } from "../firebase";
+
+// ─── Tab definitions ──────────────────────────────────────────────────────────
+const TABS = [
+  { key: "overview",     label: "Overview" },
+  { key: "network",      label: "Hospital Network" },
+  { key: "resources",    label: "Resources" },
+  { key: "notifications",label: "Notifications" },
+  // ── New feature tabs ──
+  { key: "alerts",       label: "🔔 Smart Alerts" },
+  { key: "analytics",    label: "📊 Analytics" },
+  { key: "locking",      label: "🔒 Resource Locking" },
+  { key: "blood_expiry", label: "🩸 Blood Expiry" },
+  { key: "inspection",   label: "🧪 Inspections" },
+  // ────────────────────
+  { key: "help",         label: "Help & Support" },
+];
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -19,9 +42,7 @@ const Dashboard = () => {
   const [hospitalId, setHospitalId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // -------------------------------------------------
-  // AUTH + HOSPITAL ID SETUP
-  // -------------------------------------------------
+  // ── Auth + hospital ID ────────────────────────────────────────────────────
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
@@ -30,7 +51,6 @@ const Dashboard = () => {
       }
 
       const storedId = localStorage.getItem("hospitalID");
-
       const finalId = urlHospitalId || storedId;
 
       if (!finalId) {
@@ -55,9 +75,7 @@ const Dashboard = () => {
     return () => unsubscribe();
   }, [navigate, urlHospitalId]);
 
-  // -------------------------------------------------
-  // LOGOUT FUNCTION
-  // -------------------------------------------------
+  // ── Logout ────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     try {
       await auth.signOut();
@@ -69,44 +87,32 @@ const Dashboard = () => {
     }
   };
 
-  // -------------------------------------------------
-  // LOADING SCREEN
-  // -------------------------------------------------
   if (loading || !hospitalId) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-blue-600 font-semibold text-lg">
-          Loading dashboard...
-        </p>
+        <p className="text-blue-600 font-semibold text-lg">Loading dashboard...</p>
       </div>
     );
   }
 
-  // -------------------------------------------------
-  // TAB SWITCHING
-  // -------------------------------------------------
+  // ── Content switcher ──────────────────────────────────────────────────────
   const renderContent = () => {
     const props = { hospitalId };
-
     switch (activeTab) {
-      case "overview":
-        return <DashboardOverview {...props} />;
-      case "network":
-        return <HospitalNetwork {...props} />;
-      case "resources":
-        return <ResourceManagement {...props} />;
-      case "notifications":
-        return <ReferralNotifications {...props} />;
-      case "help":
-        return <HelpSupport />;
-      default:
-        return <DashboardOverview {...props} />;
+      case "overview":     return <DashboardOverview {...props} />;
+      case "network":      return <HospitalNetworkWithDistance {...props} />;
+      case "resources":    return <ResourceManagement {...props} />;
+      case "notifications":return <ReferralNotifications {...props} />;
+      case "alerts":       return <SmartAlertSystem {...props} />;
+      case "analytics":    return <AnalyticsDashboard {...props} />;
+      case "locking":      return <PartialResourceLocking {...props} />;
+      case "blood_expiry": return <BloodExpiryTracking {...props} />;
+      case "inspection":   return <InspectionTracking {...props} />;
+      case "help":         return <HelpSupport />;
+      default:             return <DashboardOverview {...props} />;
     }
   };
 
-  // -------------------------------------------------
-  // UI
-  // -------------------------------------------------
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
@@ -117,8 +123,6 @@ const Dashboard = () => {
             Managing Hospital: <strong>{hospitalId}</strong>
           </p>
         </div>
-
-        {/* LOGOUT BUTTON */}
         <button
           onClick={handleLogout}
           className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
@@ -128,14 +132,8 @@ const Dashboard = () => {
       </header>
 
       {/* Tabs */}
-      <nav className="flex flex-wrap gap-2 bg-white p-4 border-b sticky top-0 z-10">
-        {[
-          ["overview", "Overview"],
-          ["network", "Hospital Network"],
-          ["resources", "Resource Management"],
-          ["notifications", "Notifications"],
-          ["help", "Help & Support"],
-        ].map(([key, label]) => (
+      <nav className="flex flex-wrap gap-2 bg-white p-4 border-b sticky top-0 z-10 shadow-sm">
+        {TABS.map(({ key, label }) => (
           <Button
             key={key}
             variant={activeTab === key ? "default" : "outline"}
