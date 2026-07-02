@@ -284,8 +284,8 @@ Firebase Integration • Authentication • Database Design
 GitHub
 https://github.com/VAIBHAVKHANDELWA
 ---
-LinkedIn
-https://www.linkedin.com/in/vaibhavkhandelwal-cse/
+**LinkedIn
+https://www.linkedin.com/in/vaibhavkhandelwal-cse/**
 
 ---
 ---
