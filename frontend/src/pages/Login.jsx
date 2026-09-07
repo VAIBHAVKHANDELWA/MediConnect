@@ -8,7 +8,7 @@ import {
   browserSessionPersistence,
 } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,43 +41,44 @@ const Login = () => {
     }
 
     try {
-      setLoading(true);
+  setLoading(true);
 
-      // Step 1 — Check if hospital exists in Firestore
-      const q = query(collection(db, "hospitals"), where("email", "==", email));
-      const snapshot = await getDocs(q);
+  // Step 1 — Apply persistence based on checkbox
+  await setPersistence(
+    auth,
+    keepLoggedIn ? browserLocalPersistence : browserSessionPersistence
+  );
 
-      if (snapshot.empty) {
-        alert("No hospital account found with this email. Please create one.");
-        navigate("/signup");
-        return;
-      }
+  // Step 2 — Authenticate user with Firebase Auth
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  const uid = userCredential.user.uid;
 
-      // Step 2 — Apply persistence based on checkbox
-      await setPersistence(
-        auth,
-        keepLoggedIn ? browserLocalPersistence : browserSessionPersistence
-      );
+  // Step 3 — Look up this user's linked hospital by UID (set during Hospital Registration)
+  const userRef = doc(db, "users", uid);
+  const userSnap = await getDoc(userRef);
 
-      // Step 3 — Authenticate user with Firebase Auth
-      await signInWithEmailAndPassword(auth, email, password);
+  if (!userSnap.exists() || !userSnap.data().hospitalId) {
+    alert("No hospital registered for this account yet. Please complete registration.");
+    navigate("/HospitalRegistration");
+    return;
+  }
 
-      // Step 4 — Fetch hospital ID
-      const hospitalId = snapshot.docs[0].id;
-      localStorage.setItem("hospitalID", hospitalId);
+  // Step 4 — Fetch hospital ID
+  const hospitalId = userSnap.data().hospitalId;
+  localStorage.setItem("hospitalID", hospitalId);
 
-      // Step 5 — Redirect to Dashboard
-      navigate(`/dashboard/${hospitalId}`, { replace: true });
+  // Step 5 — Redirect to Dashboard
+  navigate(`/dashboard/${hospitalId}`, { replace: true });
 
-    } catch (error) {
-      if (error.code === "auth/invalid-credential") {
-        alert("Incorrect password. Please try again.");
-      } else {
-        alert("Login error: " + error.message);
-      }
-    } finally {
-      setLoading(false);
-    }
+} catch (error) {
+  if (error.code === "auth/invalid-credential") {
+    alert("Incorrect password. Please try again.");
+  } else {
+    alert("Login error: " + error.message);
+  }
+} finally {
+  setLoading(false);
+}
   };
 
   // PASSWORD RESET
